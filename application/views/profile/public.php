@@ -1,0 +1,1 @@
+<h2>Public Profile for <?= $user; ?></h2> <h3>Recent Messages:</h3> <?= $messages; ?>
