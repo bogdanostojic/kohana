@@ -126,11 +126,12 @@ Kohana::modules(array(
 	// 'auth'       => MODPATH.'auth',       // Basic authentication
 	// 'cache'      => MODPATH.'cache',      // Caching with multiple backends
 	// 'codebench'  => MODPATH.'codebench',  // Benchmarking tool
-    //'database'   => MODPATH.'database',   // Database access
-	// 'image'      => MODPATH.'image',      // Image manipulation
+    'database'   => MODPATH.'database',   // Database access
+	'image'      => MODPATH.'image',      // Image manipulation
 	// 'minion'     => MODPATH.'minion',     // CLI Tasks
 	//'orm'        => MODPATH.'orm',        // Object Relationship Mapping
 	// 'unittest'   => MODPATH.'unittest',   // Unit testing
+    'pagination' => MODPATH.'pagination', //Da rasporedi sadrzaj na vise stranica.
 	 'userguide'  => MODPATH.'userguide',  // User guide and API documentation
 	));
 
@@ -147,6 +148,16 @@ Kohana::modules(array(
  * Set the routes. Each route must have a minimum of a name, a URI and a set of
  * defaults for the URI.
  */
+
+
+//Reset sifre :
+
+Route::set('reset', 'reset')
+    ->defaults(array(
+        'directory'  => 'user',
+        'controller' => 'account',
+        'action'     => 'reset',
+    ));
 
 //Za sign in
 

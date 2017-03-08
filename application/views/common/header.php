@@ -1,5 +1,6 @@
 <div id="logo">   
-    <img src="<?phpechoURL::base(); ?>media/images/logo.jpg" alt="<?php echo $site_name; ?>" /> </div> 
+    <img src="<?php echo URL::base(); ?>media/images/logo.jpg" alt="<?php echo $site_name; ?>" style="height: 100px ; width: 150px;"/>
+</div> 
 <p id=»tagline»>   <em>Because it›s all about you!</em> </p>
 <ul id=»main_nav»> 
     <li><a href="<?php echo URL::site(); ?>">Home</a></li> 

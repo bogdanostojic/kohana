@@ -12,4 +12,9 @@ class Controller_User_Account extends Controller_Application
          $content = View::factory('account/signup');          
          $this->template->content = $content;   
      } 
+    public function action_reset()
+    {
+        $content = View::factory('account/reset');
+        $this->template->content = $content;
+    }
 } 
