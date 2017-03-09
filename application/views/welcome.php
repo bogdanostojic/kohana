@@ -7,8 +7,8 @@
 <?php foreach ($messages as $message) : ?>
    <p class="message">     
        <?php echo $message['content']; ?>  <br />    
-       <span class="published"><?php echo Date::fuzzy_span($message['date_published'])?>
-    </span> 
+            <span class="published"><?php echo Date::fuzzy_span($message['date_published'])?></span>
+    
 </p> 
 <hr/>
 
@@ -23,6 +23,9 @@
             echo Form::input('username', $username);
 echo Form::close();
 
-    
+
+
+
+    echo $pager_links; 
 ?>
 </p>

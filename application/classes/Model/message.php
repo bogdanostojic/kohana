@@ -11,29 +11,33 @@ class Model_Message {
     * @return  Database    */ 
     public function add($user_id, $message)
     {      
-         return DB::select()    
-             ->from($this->_table)  
-             ->order_by('date_published')   
-             ->limit($limit)    
-             ->offset($offset)   
-             ->execute()    
-             ->as_array(); 
+
         $data = array('user_id', 'author', 'date_published');
         return DB::insert($this->_table, $data)->values($user_id, $message, time())->execute(); 
     }
-    public function count_all() 
-    {  
-        return DB::select(DB::expr('COUNT(*) AS message_count'))->from($this->_table)->execute()->get('message_count'); 
-    }
+
     /**  
     * Gets all messages    
     *   
     * @return  array
 
     */   
-    public function get_all()  
+    public function get_all($limit = 10, $offset = 0)  
     {      
-        return DB::select()->from($this->_table)->execute()->as_array(); 
+                return DB::select()    
+             ->from($this->_table)  
+             ->order_by('date_published')   
+             ->limit($limit)    
+             ->offset($offset)   
+             ->execute()    
+             ->as_array(); 
+    }
+    
+        public function count_all() 
+    {  
+        return DB::select(DB::expr('COUNT(*) AS message_count'))
+            ->from($this->_table)
+            ->execute()->get('message_count'); 
     }
    /** 
    * Deletes a message from the DB    

@@ -131,7 +131,8 @@ Kohana::modules(array(
 	// 'minion'     => MODPATH.'minion',     // CLI Tasks
 	//'orm'        => MODPATH.'orm',        // Object Relationship Mapping
 	// 'unittest'   => MODPATH.'unittest',   // Unit testing
-    'pagination' => MODPATH.'pagination', //Da rasporedi sadrzaj na vise stranica.
+    'paginator'  => MODPATH.'paginator',
+ //Da rasporedi sadrzaj na vise stranica.
 	 'userguide'  => MODPATH.'userguide',  // User guide and API documentation
 	));
 

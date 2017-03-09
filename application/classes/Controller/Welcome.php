@@ -1,5 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
+
 class Controller_Welcome extends Controller_Application {
 
 	public function action_index()
@@ -22,26 +23,32 @@ class Controller_Welcome extends Controller_Application {
         
         /*<--------Ovako radi sa username, random i message globalnim promenljivama-------->*/
         $random = rand(1,10);
-        /*
-                ***STARO***
+        
+              //  ***STARO***
        $this->response->body(View::set_global('username', 'Bogdan Ostojic'));
        $this->response->body(View::bind_global('random', $random));
         
-        */
-        $content = View::factory('welcome')->bind('messages', $messages);
+        
+      /*  $content = View::factory('welcome')->bind('messages', $messages);
         $content->random = $random;
         $content->site_name = 'Ископаће те Били.';
         $content->username = 'Bogdan Ostojic';
-        $message = new Model_Message;
-           $message_count = $message->count_all();   
-        $pagination = Pagination::factory(array(  
-            'total_items'    => $message_count, 
-            'items_per_page' => 3,  
-        ));     
-        $pager_links = $pagination->render();   
-        $messages = $message->get_all($pagination->items_per_page, $pagination->offset);
-        $this->template->content = $content;
+        */
         
+            
+  
+        $content = View::factory('welcome')->bind('messages', $messages)->bind('pager_links', $pager_links);      
+        $message = new Model_Message; 
+        $messages = $message->get_all();   
+        $message_count = $message->count_all();   
+        $pagination = Pagination::factory(array(
+            'count_items' => $message_count,
+            'items_per_page' => 3,
+        ));
+        
+        $pager_links = $pagination->render(); 
+        $messages = $message->get_all($pagination->items_per_page); 
+        $this->template->content = $content;
         
 	}
     
