@@ -42,9 +42,19 @@ class Controller_Welcome extends Controller_Application {
         $messages = $message->get_all();   
         $message_count = $message->count_all();   
         $pagination = Pagination::factory(array(
-            'count_items' => $message_count,
-            'items_per_page' => 3,
-        ));
+                        'total_items'    => $message_count,
+                        'items_per_page' => 2,
+    //                    'current_page'   => Request::current()->param("page"),
+                            )
+                    )
+                    ->route_params(array(
+                'directory'  => Request::current()->directory(),
+                'controller' => Request::current()->controller(),
+                'action'     => Request::current()->action(),
+                "id"         => 1,
+                
+                    )
+            );
         
         $pager_links = $pagination->render(); 
         $messages = $message->get_all($pagination->items_per_page); 

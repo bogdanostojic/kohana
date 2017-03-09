@@ -1,366 +1,395 @@
-<?php defined('SYSPATH') or die('No direct script access.');
+<?php
+
+defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Author: Gerasimov Ilya
- * Github: https://github.com/Omashu/
- * 
- * Examples:
- * 
- * 	Create by base URL:
- * 
- * 		#1: Pagination::factory(array(
- * 			'base_url' => '/page',
- * 			'count_items' => 40,
- * 			'items_per_page' => 10,
- * 			'current_page' => 1,
- * 		), 'default');
- * 
- * 		#2: Pagination::factory('/page', 1, 40, 10);
- * 
- * 		Return urls: '/page1', '/page2', '/page3' ...
- * 
- * 	Create by route:
- * 
- * 		#3: Pagination::factory(array(
- * 					'current_page' => 1,
- * 					'count_items' => 40,
- * 					'items_per_page' => 10,
- * 					'route' => 'items',
- * 					'route_page_key' => 'page',
- * 					'route_args' => array('order_by' => 'rating', 'order_way' => 'desc'),
- * 				), 'config_key');
- * 				Route 'items' example: "items/page<page>?order_by=<order_by>&order_way=<order_way>"
- * 
- * 		Return urls: 'items/page1?order_by=rating&order_way=desc' ...
+ * Pagination links generator.
+ *
+ * @package    Kohana/Pagination
+ * @category   Base
+ * @author     Kohana Team
+ * @copyright  (c) 2008-2009 Kohana Team
+ * @license    http://kohanaphp.com/license.html
  */
-
 class Kohana_Pagination {
 
-	const VERSION = "1.0";
-	protected static $config = NULL;
+    // Merged configuration settings
+    protected $config        = array(
+        'current_page'      => array('source' => 'query_string', 'key'    => 'page'),
+        'total_items'       => 0,
+        'items_per_page'    => 10,
+        'view'              => 'pagination/basic',
+        'auto_hide'         => TRUE,
+        'first_page_in_url' => FALSE,
+    );
+    // Current page number
+    protected $current_page;
+    // Total item count
+    protected $total_items;
+    // How many items to show per page
+    protected $items_per_page;
+    // Total page count
+    protected $total_pages;
+    // Item offset for the first item displayed on the current page
+    protected $current_first_item;
+    // Item offset for the last item displayed on the current page
+    protected $current_last_item;
+    // Previous page number; FALSE if the current page is the first one
+    protected $previous_page;
+    // Next page number; FALSE if the current page is the last one
+    protected $next_page;
+    // First page number; FALSE if the current page is the first one
+    protected $first_page;
+    // Last page number; FALSE if the current page is the last one
+    protected $last_page;
+    // Query offset
+    protected $offset;
+    // Request object
+    protected $_request;
+    // Route to use for URIs
+    protected $_route;
+    // Parameters to use with Route to create URIs
+    protected $_route_params = array();
+    protected $max_left_pages;
+    protected $max_right_pages;
 
-	/*** MAIN SETTINGS ***/
+    /**
+     * Creates a new Pagination object.
+     *
+     * @param   array  configuration
+     * @return  Pagination
+     */
+    public static function factory(array $config = array(), Request $request = NULL)
+    {
+        return new Pagination($config, $request);
+    }
 
-	/**
-	 * Template
-	 */
-	protected $view = "pagination/pagination";
+    /**
+     * Creates a new Pagination object.
+     *
+     * @param   array  configuration
+     * @return  void
+     */
+    public function __construct(array $config = array(), Request $request = NULL)
+    {
+        // Overwrite system defaults with application defaults
+        $this->config = $this->config_group() + $this->config;
 
-	/**
-	 * Route name for create urls
-	 */
-	protected $route = NULL;
+        // Assing Request
+        if ($request === NULL)
+        {
+            $request = Request::current();
+        }
 
-	/**
-	 * Route argument key for substitution to page number
-	 */
-	protected $route_page_key = NULL;
+        $this->_request = $request;
 
-	/**
-	 * Route argument values
-	 */
-	protected $route_args = array();
+        // Assign default Route
+        $this->_route = $request->route();
 
-	/**
-	 * Base url for create urls
-	 */
-	protected $base_url = NULL;
+        // Assign default route params
+        $this->_route_params = $request->param();
 
-	/**
-	 * Page view type
-	 * Values: normal OR pieces
-	 * normal: 1,2,3,4,5,6,7,8,9
-	 * pieces: 1,2...56...9 (example)
-	 */
-	protected $switch_type = "normal";
+        // Pagination setup
+        $this->setup($config);
+    }
 
-	/*** ADDITIONAL SETTINGS ***/
+    /**
+     * Retrieves a pagination config group from the config file. One config group can
+     * refer to another as its parent, which will be recursively loaded.
+     *
+     * @param   string  pagination config group; "default" if none given
+     * @return  array   config settings
+     */
+    public function config_group($group = 'default')
+    {
+        // Load the pagination config file
+        $config_file = Kohana::$config->load('pagination');
 
-	/**
-	 * View button to the first page
-	 */
-	protected $show_first = TRUE;
+        // Initialize the $config array
+        $config['group'] = (string) $group;
 
-	/**
-	 * View button to the prev page
-	 */
-	protected $show_prev = TRUE;
+        // Recursively load requested config groups
+        while (isset($config['group']) AND isset($config_file->$config['group']))
+        {
+            // Temporarily store config group name
+            $group = $config['group'];
+            unset($config['group']);
 
-	/**
-	 * View button to the prev page
-	 */
-	protected $show_last = TRUE;
+            // Add config group values, not overwriting existing keys
+            $config += $config_file->$group;
+        }
 
-	/**
-	 * View button to the next page
-	 */
-	protected $show_next = TRUE;
+        // Get rid of possible stray config group names
+        unset($config['group']);
 
-	/**
-	 * Wrap in <div/>
-	 */
-	protected $show_in_block = TRUE;
+        // Return the merged config group settings
+        return $config;
+    }
 
-	/**
-	 * Wrap in <ul/>
-	 */
-	protected $show_in_list = TRUE;
+    /**
+     * Loads configuration settings into the object and (re)calculates pagination if needed.
+     * Allows you to update config settings after a Pagination object has been constructed.
+     *
+     * @param   array   configuration
+     * @return  object  Pagination
+     */
+    public function setup(array $config = array())
+    {
+        if (isset($config['group']))
+        {
+            // Recursively load requested config groups
+            $config += $this->config_group($config['group']);
+        }
 
-	protected $block_params = array('class' => 'pagination');
-	protected $list_params = array('class' => '');
+        // Overwrite the current config settings
+        $this->config = $config + $this->config;
 
-	protected $li_active_params = array('class' => 'active');
-	protected $a_active_params = array('class' => '');
-	protected $span_active_params = array('class' => '');
+        // Only (re)calculate pagination when needed
+        if ($this->current_page === NULL OR isset($config['current_page']) OR isset($config['total_items']) OR isset($config['items_per_page']))
+        {
+            // Retrieve the current page number
+            if (!empty($this->config['current_page']['page']))
+            {
+                // The current page number has been set manually
+                $this->current_page = (int) $this->config['current_page']['page'];
+            }
+            else
+            {
+                $query_key = $this->config['current_page']['key'];
 
-	protected $li_divider_params = array('class' => 'divider');
-	protected $span_divider_params = array('class' => '');
+                switch ($this->config['current_page']['source'])
+                {
+                    case 'query_string':
+                        $this->current_page = ($this->_request->query($query_key) !== NULL) ? (int) $this->_request->query($query_key) : 1;
+                        break;
 
-	/*** LANGS ***/
-	protected $lang_next = 'Next';
-	protected $lang_prev = 'Prev';
-	protected $lang_first = '&laquo;';
-	protected $lang_last = '&raquo;';
-	protected $lang_divider = '...';
+                    case 'route':
+                        $this->current_page = (int) $this->_request->param($query_key, 1);
+                        break;
+                }
+            }
 
-	/*** PROCESS ***/
-    private $current_page = 1;
-	public $count_items = 0;
-	public $items_per_page = 0;
-	protected $count_pages = 0;
-	protected $left = 3;
-	protected $right = 3;
-	protected $switches = array();
-	protected function __construct() {}
+            // Calculate and clean all pagination variables
+            $this->total_items        = (int) max(0, $this->config['total_items']);
+            $this->items_per_page     = (int) max(1, $this->config['items_per_page']);
+            $this->total_pages        = (int) ceil($this->total_items / $this->items_per_page);
+            $this->current_page       = (int) min(max(1, $this->current_page), max(1, $this->total_pages));
+            $this->current_first_item = (int) min((($this->current_page - 1) * $this->items_per_page) + 1, $this->total_items);
+            $this->current_last_item  = (int) min($this->current_first_item + $this->items_per_page - 1, $this->total_items);
+            $this->previous_page      = ($this->current_page > 1) ? $this->current_page - 1 : FALSE;
+            $this->next_page          = ($this->current_page < $this->total_pages) ? $this->current_page + 1 : FALSE;
+            $this->first_page         = ($this->current_page === 1) ? FALSE : 1;
+            $this->last_page          = ($this->current_page >= $this->total_pages) ? FALSE : $this->total_pages;
+            $this->offset             = (int) (($this->current_page - 1) * $this->items_per_page);
 
-	/**
-	 * @return object
-	 */
-	public static function factory() {
-		if (is_null(Pagination::$config)) {
-			Pagination::$config = Kohana::$config->load("pagination");
-		}
+            $this->max_left_pages  = (int) max(0, $this->config['max_left_pages']);
+            $this->max_right_pages = (int) max(0, $this->config['max_right_pages']);
+        }
 
-		$group = Pagination::$config->get('default');
-		$group = !is_array($group) ? array() : $group;
+        // Chainable method
+        return $this;
+    }
 
-		$args = func_get_args();
-		$num_args = func_num_args();
-		$model = new Pagination();
+    /**
+     * Generates the full URL for a certain page.
+     *
+     * @param   integer  page number
+     * @return  string   page URL
+     */
+    public function url($page = 1)
+    {
+        // Clean the page number
+        $page = max(1, (int) $page);
 
-		if ($num_args === 2 AND is_array($args[0]) AND is_string($args[1])) {
-			$group = Pagination::$config->get($args[1]);
-			$group = !is_array($group) ? array() : $group;
-			$settings = array_merge($args[0], $group);
-		} else if ($num_args === 1 AND is_array($args[0])) {
-			$settings = array_merge($args[0], $group);
-		} else if ($num_args === 4) {
-			$settings = array(
-				'base_url' => isset($args[0]) ? (string) $args[0] : $model->base_url,
-				'current_page' => isset($args[1]) ? (int) $args[1] : $model->current_page,
-				'count_items' => isset($args[2]) ? (int) $args[2] : $model->count_items,
-				'items_per_page' => isset($args[3]) ? (int) $args[3] : $model->items_per_page,
-			);
-			$settings = array_merge($settings, $group);
-		} else {
-			return NULL;
-		}
+        // No page number in URLs to first page
+        if ($page === 1 AND !$this->config['first_page_in_url'])
+        {
+            $page = NULL;
+        }
 
-		// set settings
-		foreach ($settings as $key => $value) {
-			$model->{$key} = $value;
-		}
+        switch ($this->config['current_page']['source'])
+        {
+            case 'query_string':
 
-		return $model;
-	}
+                return URL::site($this->_route->uri($this->_route_params) .
+                                $this->query(array($this->config['current_page']['key'] => $page)));
 
-	/**
-	 * Getter
-	 * @param string $var variable
-	 * @param mixed $default
-	 * @return mixed
-	 */
-	public function get($var, $default = NULL) {
-		if (isset($this->{$var})) {
-			return $this->{$var};
-		}
+            case 'route':
 
-		return $default;
-	}
+                return URL::site($this->_route->uri(array_merge($this->_route_params, array($this->config['current_page']['key'] => $page))) . $this->query());
+        }
 
-	/***** VIEWS *****/
-	public function view_list_item($html, array $li_params = array()) {
-		return ($this->show_in_list 
-			? "<li".HTML::attributes($li_params).">"
-			:"") . $html . ($this->show_in_list?"</li>":"");
-	}
+        return '#';
+    }
 
-	public function view_first() {
-		if (!$this->show_first OR $this->current_page <= 2) {
-			return NULL;
-		}
+    /**
+     * Checks whether the given page number exists.
+     *
+     * @param   integer  page number
+     * @return  boolean
+     * @since   3.0.7
+     */
+    public function valid_page($page)
+    {
+        // Page number has to be a clean integer
+        if (!Valid::digit($page))
+            return FALSE;
 
-		$anchor = HTML::anchor($this->get_page_url(1), $this->lang_first);
-		return $anchor;
-	}
+        return $page > 0 AND $page <= $this->total_pages;
+    }
 
-	public function view_prev() {
-		if (!$this->show_prev OR $this->current_page <= 1) {
-			return NULL;
-		}
+    /**
+     * Renders the pagination links.
+     *
+     * @param   mixed   string of the view to use, or a Kohana_View object
+     * @return  string  pagination output (HTML)
+     */
+    public function render($view = NULL)
+    {
+        // Automatically hide pagination whenever it is superfluous
+        if ($this->config['auto_hide'] === TRUE AND $this->total_pages <= 1)
+            return '';
 
-		$anchor = HTML::anchor($this->get_page_url($this->current_page-1), $this->lang_prev);
-		return $anchor;
-	}
+        if ($view === NULL)
+        {
+            // Use the view from config
+            $view = $this->config['view'];
+        }
 
-	public function view_next() {
-		if (!$this->show_next OR $this->current_page >= $this->count_pages) {
-			return NULL;
-		}
+        if (!$view instanceof View)
+        {
+            // Load the view file
+            $view = View::factory($view);
+        }
 
-		$anchor = HTML::anchor($this->get_page_url($this->current_page+1), $this->lang_next);
-		return $anchor;
-	}
+        // Pass on the whole Pagination object
+        return $view->set(get_object_vars($this))->set('page', $this)->render();
+    }
 
-	public function view_last() {
-		if (!$this->show_last OR $this->current_page >= $this->count_pages
-			OR (($this->count_pages - $this->current_page) <= 1)) {
-			return null;
-		}
+    /**
+     * Request setter / getter
+     *
+     * @param	Request
+     * @return	Request	If used as getter
+     * @return	$this	Chainable as setter
+     */
+    public function request(Request $request = NULL)
+    {
+        if ($request === NULL)
+            return $this->_request;
 
-		$anchor = HTML::anchor($this->get_page_url($this->count_pages), $this->lang_last);
-		return $anchor;
-	}
+        $this->_request = $request;
 
-	public function view_block($type) {
-		$type = strtolower($type);
-		$html = '';
-		switch ($type) {
-			case 'open':
-				if ($this->show_in_block) {
-					$html .= "<div".HTML::attributes($this->block_params).">";
-				}
-				if ($this->show_in_list) {
-					$html .= "<ul".HTML::attributes($this->list_params).">";
-				}
-				break;
-			case 'close':
-				if ($this->show_in_list) {
-					$html .= "</ul>";
-				}
-				if ($this->show_in_block) {
-					$html .= "</div>";
-				}
-				break;
-		}
+        return $this;
+    }
 
-		return $html;
-	}
+    /**
+     * Route setter / getter
+     *
+     * @param	Route
+     * @return	Route	Route if used as getter
+     * @return	$this	Chainable as setter
+     */
+    public function route(Route $route = NULL)
+    {
+        if ($route === NULL)
+            return $this->_route;
 
-	public function view_switches() {
-		$html = '';
-		foreach ($this->switches as $key => $page) {
-			// divider
-			if (!is_numeric($page)) {
-				$html .= $this->view_list_item("<span".HTML::attributes($this->span_divider_params).">" .$page . "</span>", $this->li_divider_params);
-				continue;
-			}
+        $this->_route = $route;
 
-			// page
-			$flag_current = ((int)$page === (int)$this->current_page);
-			$item = "<span".HTML::attributes($flag_current ? $this->span_active_params : array()).">" .$page. "</span>";
-			if (!$flag_current) {
-				$item = HTML::anchor($this->get_page_url($page), $item, $flag_current ?  $this->a_active_params : array());
-			}
+        return $this;
+    }
 
-			$html .= $this->view_list_item($item, $flag_current ?  $this->li_active_params : array());
-		}
-		return $html;
-	}
+    /**
+     * Route parameters setter / getter
+     *
+     * @param	array	Route parameters to set
+     * @return	array	Route parameters if used as getter
+     * @return	$this	Chainable as setter
+     */
+    public function route_params(array $route_params = NULL)
+    {
+        if ($route_params === NULL)
+            return $this->_route_params;
 
-	protected function get_page_url($page) {
-		if ($this->route !== null) {
-			// сгенерируем по роуту
-			$url = Route::url($this->route, $this->route_args + array($this->route_page_key => $page));
-		} else {
-			$url = $this->base_url . $page;
-		}
+        $this->_route_params = $route_params;
 
-		return $url;
-	}
+        return $this;
+    }
 
-	// generate switches
-	protected function switches() {
-		$this->switches = array();
-		if ($this->switch_type === 'normal') {
-			$start = $this->current_page - $this->left;
-			$start = ($start<=0) ? 1 : $start;
-			$end = $this->current_page + $this->right;
-			$end = $end > $this->count_pages ? $this->count_pages : $end;
+    /**
+     * URL::query() replacement for Pagination use only
+     *
+     * @param	array	Parameters to override
+     * @return	string
+     */
+    public function query(array $params = NULL)
+    {
+        if ($params === NULL)
+        {
+            // Use only the current parameters
+            $params = $this->_request->query();
+        }
+        else
+        {
+            // Merge the current and new parameters
+            $params = array_merge($this->_request->query(), $params);
+        }
 
-			for ($i=$start; $i <= $end; $i++) { 
-				$this->switches[] = $i;
-			}
-		}
-		else if ($this->switch_type === 'pieces') {
-			$position = $this->current_page;
-			$position_left = $this->current_page - $this->left;
-			$position_left = ($position_left<=0) ? 1 : $position_left;
+        if (empty($params))
+        {
+            // No query parameters
+            return '';
+        }
 
-			$position_right = $this->current_page + $this->right;
-			$position_right = $position_right > $this->count_pages ? $this->count_pages : $position_right;
+        // Note: http_build_query returns an empty string for a params array with only NULL values
+        $query = http_build_query($params, '', '&');
 
-			if ( $position_left === 2) {
-				$this->switches[] = 1;
-			}
-			else if ( $position_left > 2) {
-				$this->switches[] = 1;
-				if ($position_left <= 3) {
-					$this->switches[] = $this->lang_divider;
-				} else if ( $position_left > 3) {
-					$this->switches[] = 2;
-					$this->switches[] = $this->lang_divider;
-				}
-			}
+        // Don't prepend '?' to an empty string
+        return ($query === '') ? '' : ('?' . $query);
+    }
 
-			for ($i = $position_left; $i <= $position_right; $i++) { 
-				$this->switches[] = $i;
-			}
+    /**
+     * Renders the pagination links.
+     *
+     * @return  string  pagination output (HTML)
+     */
+    public function __toString()
+    {
+        try
+        {
+            return $this->render();
+        }
+        catch (Exception $e)
+        {
+            Kohana_Exception::handler($e);
+            return '';
+        }
+    }
 
-			$offset = $this->count_pages - $position_right;
-			if ($offset > 3) {
-				$this->switches[] = $this->lang_divider;
-				$this->switches[] = $this->count_pages-1;
-				$this->switches[] = $this->count_pages;
-			} else if ($offset >= 1) {
+    /**
+     * Returns a Pagination property.
+     *
+     * @param   string  property name
+     * @return  mixed   Pagination property; NULL if not found
+     */
+    public function __get($key)
+    {
+        return isset($this->$key) ? $this->$key : NULL;
+    }
 
-				if ($offset >= 2) {
-					$this->switches[] = $this->lang_divider;
-				}
+    /**
+     * Updates a single config setting, and recalculates pagination if needed.
+     *
+     * @param   string  config key
+     * @param   mixed   config value
+     * @return  void
+     */
+    public function __set($key, $value)
+    {
+        $this->setup(array($key => $value));
+    }
 
-				$this->switches[] = $this->count_pages;
-			}
-		}
-	}
-
-	public function render() {
-		try {
-			// counts
-			$this->count_items = max(0, (int) $this->count_items);
-			$this->items_per_page = max(1, (int) $this->items_per_page);
-			$this->count_pages = ceil($this->count_items/$this->items_per_page);
-
-			// generate
-			$this->switches();
-
-			return View::factory($this->view)
-				->set('paginator', $this)->render();
-		} catch (Kohana_Exception $e) {
-			return 'Pagination: ' . $e->getMessage();
-		}
-	}
-
-	public function __toString() {
-		return $this->render();
-	}
 }
+
+// End Pagination

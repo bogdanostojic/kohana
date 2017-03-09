@@ -1,63 +1,72 @@
-Kohana-3.3-Pagination
-=====================
+Kohana 3.3 and 3.2 Pagination
+---
 
-Module pagination for Kohana 3.3
+This is pretty much hacked up to support Kohana 3.3 and 3.2 so there are a few things to note:
 
-Example 1:
----------------
-	// base url, current page, count items, items per page
-	$model = Pagination::factory('/index/page', 1, 40, 10);
-	echo $model;
+- Request, Route and route parameters dependency injection added
+- Current Request is used by default instead of the initial one ($_GET was used directly in < 3.2)
+- URL::query() has been removed, Pagination::query() added instead (HMVC support)
+- Add feauture to limit links in rendered html template.
 
-Example 2:
----------------
-	// options required = count_items, items_per_page, current_page AND (base_url OR route)
-	// config = string or empty but use default
-	$model = Pagination::factory(array options, string config);
-	echo $model;
+Usage Example
+---
 
-Example 3 (create by route):
-----------------------------
-	// example route items: "items/page<p>?order_by=<order_by>&order_way=<order_way>"
-	$model = Pagination::factory(array(
-		'current_page' => 1,
-		'count_items' => 100,
-		'items_per_page' => 25,
-		'route' => 'items',
-		'route_page_key' => 'p',
-		'route_args' => array(
-			'order_by' => 'rating',
-			'order_way' => 'desc',
-		)
-	));
-	echo $model;
+        //first calc average count
+        $count     = $count_sql->count_all();
 
-Options:
---------
-* `current_page` - required, int current page
-* `count_items` - required, int all count items
-* `items_per_page` - required, int items on page
-* `view` - string, template name - default: `pagination/pagination`
-* `route` - string, route key for create urls by route - default: `NULL`
-* `route_page_key` - string, route argument key for replace on page number - default: `NULL`
-* `route_args` - array, route other arguments for replace - default: `array()`
-* `base_url` - string, base url for create urls by url - default: `NULL`
-* `switch_type` - string, show type, normal (1,2,3,4,5,6,7) OR pieces (1,2...6,7..9,10) - default: `normal`
-* `show_first` - bool, show button to first page - default: `TRUE`
-* `show_prev` - bool, show button to prev page - default: `TRUE`
-* `show_last` - bool, show button to last page - default: `TRUE`
-* `show_next` - bool, show button to next page - default: `TRUE`
-* `show_in_block` - bool, wrap in div - default: `TRUE`
-* `show_in_list` - bool, wrap in ul - default: `TRUE`
-* `block_params` - array, attributes for block - default: `array('class' => 'pagination')`
-* `list_params` - array, attributes for list - default: `array()`
-* `li_active_params` - array, attributes for active li - default: `array('class' => 'active')`
-* `a_active_params` - array, attributes for active li > a - default: `array()`
-* `span_active_params` - array, attributes for active li > a > span - default: `array()`
-* `li_divider_params` - array, attributes for divider li - default: `array('class' => 'divider')`
-* `span_divider_params` - array, attributes for divider li > span - default: `array()`
-* `lang_next` - string, button next text, default: `Next`
-* `lang_prev` - string, button prev text, default: `Prev`
-* `lang_first` - string, button first text, default: `&laquo;`
-* `lang_last` - string, button last text, default: `&raquo;`
-* `lang_divider` - string, divider text, default: `...`
+        //you can change items_per_page
+        $num = 10;
+        //you can configure routes and custom routes params
+        $pagination = Pagination::factory(array(
+                            'total_items'    => $count,
+                            'items_per_page' => $num,
+        //                    'current_page'   => Request::current()->param("page"),
+                                )
+                        )
+                        ->route_params(array(
+                    'directory'  => Request::current()->directory(),
+                    'controller' => Request::current()->controller(),
+                    'action'     => Request::current()->action(),
+                    "id"         => $date,
+                    "id2"        => $date2,
+                        )
+                );
+
+        //now select from your DB using calculated offset
+        $logs = $logs_sql->order_by("id", "DESC")
+                        ->limit($pagination->items_per_page)
+                        ->offset($pagination->offset)
+                        ->group_by("id")
+                        ->find_all()->as_array();
+
+        //and finally set view variables
+        $this->content = View::factory("admin/log/asb/main.tpl")
+                ->set("logs", $logs)
+                ->set('pagination', $pagination);
+
+Variable $pagination will automatically convert to rendered from tpl html.
+
+In this version added some new config features!
+
+Config Example:
+---
+        return array(
+            // Application defaults
+            'default' => array(
+                // source: "query_string" or "route"
+                'current_page'      => array('source' => 'query_string',
+                                             'key'    => 'page'),
+                'total_items'       => 0,
+                'items_per_page'    => 10,
+                'view'              => 'pagination/limited',
+                'auto_hide'         => TRUE,
+                'first_page_in_url' => FALSE,
+
+                //NEW! Use limited template.
+                'max_left_pages'    => 10,
+                'max_right_pages'   => 10,
+            ),
+        );
+
+In pagination/view folder added limited tpl, witch can limit number of left and right
+pages links by config variables.
