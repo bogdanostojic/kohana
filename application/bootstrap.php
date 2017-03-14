@@ -131,8 +131,7 @@ Kohana::modules(array(
 	// 'minion'     => MODPATH.'minion',     // CLI Tasks
 	//'orm'        => MODPATH.'orm',        // Object Relationship Mapping
 	// 'unittest'   => MODPATH.'unittest',   // Unit testing
-    'paginator'  => MODPATH.'paginator',
- //Da rasporedi sadrzaj na vise stranica.
+    'paginator'  => MODPATH.'paginator',        //Da rasporedi sadrzaj na vise stranica.
 	 'userguide'  => MODPATH.'userguide',  // User guide and API documentation
 	));
 
@@ -143,12 +142,39 @@ Kohana::modules(array(
  * If you have not defined a cookie salt in your Cookie class then
  * uncomment the line below and define a preferrably long salt.
  */
-// Cookie::$salt = NULL;
+Cookie::$salt = 'sss';
 
 /**
  * Set the routes. Each route must have a minimum of a name, a URI and a set of
  * defaults for the URI.
  */
+
+//Za editovanje
+
+Route::set('user-edit-message', 'messages/edit(/<user_id>)(/<message_id>)', array('id' => '[0-9]+'))
+    ->defaults(array(     
+        'directory' => 'user', 
+        'controller' => 'messages',    
+        'action'     => 'edit'   )); 
+
+
+//Dodavanje sadrzaja
+
+Route::set('user-add-messages', 'messages/add(/<id>)', array('id' => '[0-9]+'))->defaults(array(   
+        'directory'  => 'user',   
+        'controller' => 'messages',  
+        'action'     => 'add', 
+    )); 
+
+
+/*
+Route::set('user-messages', 'messages/get_ messages(/<id>(/<optional>))', array('id' => '[0-9]+', 'optional' => '.*'))  
+    ->defaults(array(   
+        'directory'  => 'user',   
+        'controller' => 'messages',  
+        'action'     => 'get_messages'   
+    )); 
+*/
 
 
 //Reset sifre :

@@ -43,8 +43,8 @@ class Controller_Welcome extends Controller_Application {
         $message_count = $message->count_all();   
         $pagination = Pagination::factory(array(
                         'total_items'    => $message_count,
-                        'items_per_page' => 2,
-    //                    'current_page'   => Request::current()->param("page"),
+                        'items_per_page' => 7,
+    //                  'current_page'   => Request::current()->param("page"),
                             )
                     )
                     ->route_params(array(
@@ -52,6 +52,7 @@ class Controller_Welcome extends Controller_Application {
                 'controller' => Request::current()->controller(),
                 'action'     => Request::current()->action(),
                 "id"         => 1,
+                "id2"        => 2,
                 
                     )
             );
