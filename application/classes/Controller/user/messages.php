@@ -34,14 +34,26 @@ class Controller_User_Messages extends Controller_Application
        
         $messages = new Model_Message;      
        $user_id = $this->request->param('id');   
-       $message_count = $messages->count_all($user_id);      
+       $message_count = $messages->count_all($user_id); 
+       
+       if($user_id)
+       {
+           $message_count = $messages->where('user_id', '=', $user_id)->count_all();
+       }
+       else
+       {
+           $message_count = $messages->count_all();
+           
+       }
        $pagination = Pagination::factory(array(       
            'total_items'   => $message_count,   
            'items_per_page' => 3,      
        ));       
        $pager_links = $pagination->render(); 
        $messages = $messages->get_all($pagination->items_per_page,   $pagination->offset, $user_id);
-        $this->template->content = View::factory('profile/messages')->set('messages', $messages)->set('pager_links', $pager_links); 
+        $this->template->content = View::factory('profile/messages')
+            ->set('messages', $messages)
+            ->set('pager_links', $pager_links); 
    }
     
     public function action_add() 
@@ -49,36 +61,55 @@ class Controller_User_Messages extends Controller_Application
         $messages = new Model_Message;  
         $user_id = $this->request->param('id');   
         $this->template->content = View::factory('profile/message_form');  
-        if (isset($_POST['content']))    
+        if (isset ($_POST) &&  isset($_POST['content']))    
         {      
-            $messages->add($user_id, (string) $_POST['content']); 
+            $messages->create_message($user_id, (string) $_POST['content']); 
            // $redirect = URL::site('messages/get_messages/$user_id'); 
             //Request::instance()->redirect($redirect);    
             
             $this->redirect("messages/get_messages/$user_id");
         }        
     }
-     public function action_edit()    {
+     public function action_edit()   
+     {
+         
+      
       $user_id = $this->request->param('user_id');
       $message_id = $this->request->param('message_id');
-      $messages = new Model_Message;
+      //$messages = new Model_Message;
+      $messages = ORM::factory('Message',$message_id);
       $message = $messages->get_message($message_id);
-      if ($message['user_id'] != $user_id) 
+      if ($messages->user_id != $user_id) 
       {         
           throw new Exception("User is not owner of the message");     
       }
-      $this->template->content = View::factory('profile/message_form')->bind('value', $message['content']);
+      $this->template->content = View::factory('profile/message_form')->bind('value', $this->content);
       if ($_POST && $_POST['content'])  
       {      
-          $messages->edit($message_id, $_POST['content']);    
+          $messages->update_message($_POST['content']);
           $this->redirect("messages/get_messages/$user_id");
          // $redirect = url::site("messages/get_messages/$user_id"); 
         //  Request::instance()->redirect($redirect);   
       }
    }
- 
- 
+    
+    public function action_delete()
+    {
 
+        $user_id = $this->request->param('user_id'); 
+        $message_id = $this->request->param('message_id'); 
+        $messages = ORM::factory('Message',$message_id); 
+        $message = $messages->get_message($message_id);    
+        if ($messages->user_id != $user_id)
+        { 
+            throw new Exception("User is not owner of the message");   
+        }            
+        $messages->delete($message_id);   
+       //     $messages->delete();
+        
+        //Radi ORM-ova Delete funkcija, sa
+        $this->redirect("messages/get_messages/$user_id");
+    }
 }
 
 ?>

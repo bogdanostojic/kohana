@@ -129,7 +129,7 @@ Kohana::modules(array(
     'database'   => MODPATH.'database',   // Database access
 	'image'      => MODPATH.'image',      // Image manipulation
 	// 'minion'     => MODPATH.'minion',     // CLI Tasks
-	//'orm'        => MODPATH.'orm',        // Object Relationship Mapping
+	'orm'        => MODPATH.'orm',        // Object Relationship Mapping
 	// 'unittest'   => MODPATH.'unittest',   // Unit testing
     'paginator'  => MODPATH.'paginator',        //Da rasporedi sadrzaj na vise stranica.
 	 'userguide'  => MODPATH.'userguide',  // User guide and API documentation
@@ -156,7 +156,13 @@ Route::set('user-edit-message', 'messages/edit(/<user_id>)(/<message_id>)', arra
         'directory' => 'user', 
         'controller' => 'messages',    
         'action'     => 'edit'   )); 
+//Brisanje sadrzaja
 
+Route::set('user-delete-message', 'messages/delete(/<user_id>)(/<message_id>)', array('id' => '[0-9]+'))
+    ->defaults(array(     
+        'directory' => 'user', 
+        'controller' => 'messages',    
+        'action'     => 'delete'   )); 
 
 //Dodavanje sadrzaja
 
