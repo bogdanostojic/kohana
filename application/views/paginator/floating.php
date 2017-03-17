@@ -13,7 +13,7 @@ $n1 = 1;
 $n2 = min($count_out, $total_pages);
 
 // Ending group of pages: $n7...$n8
-$n7 = max(1, $total_pages - $count_out + 1);
+$n7 = max(0, $total_pages - $count_out + 1);
 $n8 = $total_pages;
 
 // Middle group of pages: $n4...$n5

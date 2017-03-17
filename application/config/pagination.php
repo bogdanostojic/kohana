@@ -7,6 +7,8 @@ return array(
         'current_page'      => array('source' => 'query_string', 'key'    => 'page'),
         'total_items'       => 0,
         'items_per_page'    => 10,
+        'count_in'          => 0,
+        'count_out'         => 0,
         'view'              => 'pagination/basic',
         'auto_hide'         => TRUE,
         'first_page_in_url' => FALSE,

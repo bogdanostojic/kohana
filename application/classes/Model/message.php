@@ -25,8 +25,9 @@ class Model_Message extends ORM {
     * @param  string   new message   
     * @return self    */
     
-    public function update_message( $content)  
+    public function update_message( $content)  //Dodatni parametar u knjizi je bio $message_id, ali je suvisan i treba samo $content da se prosledi.
     {    
+        //$this->message_id = $message_id;
         $this->content = $content;    
         return $this->save();  
     }     

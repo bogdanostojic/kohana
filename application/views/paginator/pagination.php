@@ -5,13 +5,11 @@ $next_string = 'Next Page';
 $last_string = '&nbsp;>>';
 ?>
 <style type="text/css">
-    <!--
     .pagination a {
         border: 1px solid #CCCCCC;
         margin: 2px;
         padding: 0.1em 0.2em;
     }
-    -->
 </style>
 <p class="pagination">
 	<?php
@@ -29,6 +27,7 @@ $last_string = '&nbsp;>>';
 	}
 	if ($next)
 	{
+ 
 		echo '<a href="' . $next . '" rel="next">' . $next_string . '</a>';
 	}
 	if ($last)

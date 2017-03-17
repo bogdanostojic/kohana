@@ -83,7 +83,7 @@ class Controller_User_Messages extends Controller_Application
       {         
           throw new Exception("User is not owner of the message");     
       }
-      $this->template->content = View::factory('profile/message_form')->bind('value', $this->content);
+      $this->template->content = View::factory('profile/message_form')->bind('value', $message['content']);
       if ($_POST && $_POST['content'])  
       {      
           $messages->update_message($_POST['content']);
@@ -98,14 +98,15 @@ class Controller_User_Messages extends Controller_Application
 
         $user_id = $this->request->param('user_id'); 
         $message_id = $this->request->param('message_id'); 
-        $messages = ORM::factory('Message',$message_id); 
-        $message = $messages->get_message($message_id);    
-        if ($messages->user_id != $user_id)
+
+        $message = ORM::factory('Message', $message_id);     //Preko $message->find() ne funkcionise, radi samo ovako.
+        if ($message->user_id != $user_id)
         { 
             throw new Exception("User is not owner of the message");   
         }            
-        $messages->delete($message_id);   
-       //     $messages->delete();
+       // i jedno i drugo radi;
+       // $messages->delete($message_id);    
+          $message->delete();
         
         //Radi ORM-ova Delete funkcija, sa
         $this->redirect("messages/get_messages/$user_id");
