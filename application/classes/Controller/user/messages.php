@@ -55,7 +55,7 @@ class Controller_User_Messages extends Controller_Application
             ->set('messages', $messages)
             ->set('pager_links', $pager_links); 
    }
-    
+ /*   
     public function action_add() 
     {   
         $messages = new Model_Message;  
@@ -110,7 +110,70 @@ class Controller_User_Messages extends Controller_Application
         
         //Radi ORM-ova Delete funkcija, sa
         $this->redirect("messages/get_messages/$user_id");
-    }
+    }*/
+
+
+
+
+     public function action_add()       
+      {           
+         $user = Auth::instance()->get_user();  
+         $message = new Model_Message;   
+         $message->user = $user;
+         $this->template->content = View::factory('profile/message_form')
+         ->bind('errors', $errors);
+            if ($_POST)
+              {
+                $_POST['date_published'] = time();
+                $message->values($_POST);
+                if ($message->check())
+                  {
+                    $message->save();
+                    $this->redirect("messages/get_messages/$user->id");
+                  }                 
+                else
+                  {
+                    $errors = $message->validate()>errors('messages/add');
+                  }
+        }           
+       }
+       public function action_edit()       
+        {
+             $user = Auth::instance()->get_user();
+             $message_id = $this->request->param('message_id');
+             $messages = new Model_Message;
+             $message = ORM::factory('Message', $message_id);
+             if ($message->user_id != $user->id)
+              {                   
+                throw new Exception("User is not owner of the message");  
+              }
+             $this->template->content = View::factory('profile/message_form')
+             ->set('value', $message->content);
+              if ($_POST)
+                {
+                  $validation = Validation::factory($this->request->post())
+                          ->rule('content', 'not_empty')
+                          ->rule('content', 'min_length', array(':value', 2))
+                          ->label('content', 'Korisnicko ime');
+                  $message->update($validation);
+                  $this->template->content = $message->update_message($_POST['content']);
+                //$this->template->content = View::factory('profile/message_form')->bind('value', $message['content']);
+                  $this->redirect("messages/get_messages/$user->id");
+                }        
+         }
+
+       public function action_delete()
+         {
+             $user = Auth::instance()->get_user();
+             $message_id = $this->request->param('message_id');
+             $message = ORM::factory('Message', $message_id);
+             if ($message->user_id != $user->id)
+              {                   
+               throw new Exception("User is not owner of the message");
+              }
+             $message->delete();
+             $this->redirect("messages/get_messages/$user->id");
+} 
 }
 
 ?>

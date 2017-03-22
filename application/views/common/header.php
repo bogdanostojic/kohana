@@ -9,4 +9,13 @@
       <li><a href="<?php echo URL::site("/messages/add/1"); ?>">Add message</a></li>
 </ul> 
 
+<p id="account">
+
+<?php if (Auth::instance()->logged_in()       && $user = Auth::instance()->get_user()) : ?>      Logged in as <?php echo $user->username; ?>.  <?php echo HTML::anchor('logout', 'Logout'); ?>
+	<?php echo HTML::anchor('messages/add', 'New Message'); ?>
+<?php else: ?>
+       <?php echo HTML::anchor('login', 'Login'); ?> | <?php echo HTML::anchor('signup', 'Signup'); ?>
+<?php endif; ?>
+
+</p>
  <p>Copyright &copy; 2011 - <?php echo $site_name; ?></p>
