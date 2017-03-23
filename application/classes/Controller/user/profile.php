@@ -30,7 +30,11 @@ class Controller_User_Profile extends Controller_Application
         ->bind('user', $user)
         ->bind('messages', $messages)
         ->bind('pager_links', $pager_links);
-        $user = Auth::instance()->get_user();                           
+        $user = Auth::instance()->get_user();
+        $message = new Model_Message;
+        $messages = $message->get_all();                         
         $this->template->content = $content;
-        }             
+        }
+
+
 }

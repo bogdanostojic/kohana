@@ -48,7 +48,7 @@ class Controller_User_Account extends Controller_Application
           $post = $this->request->post();
              $status = Auth::instance()->login($post['username'], $post['password']);
              if ($validation->check() && $status) {
-                $this->redirect("profile/private", 302);
+                $this->redirect("profile/private", 302);    
              }
              else {
                 $errors = $validation->errors("login");

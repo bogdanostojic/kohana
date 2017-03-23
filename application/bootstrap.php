@@ -191,20 +191,22 @@ Route::set('user-messages', 'messages/get_ messages(/<id>(/<optional>))', array(
         'action'     => 'logout',
         ));
 
-    Route::set('profile-private', 'profile/private')
+
+Route::set('ajax', 'ajax')
+    ->defaults(array(
+        'controller' => 'ajax',
+        'action' => 'getusers',
+        ));
+
+//Private view :
+
+
+Route::set('profile-private', 'profile/private')
     ->defaults(array(
         'directory' => 'user',
         'controller' => 'profile',
         'action'     => 'private',
         ));
-
-        Route::set('profile-private', 'profile/private')
-    ->defaults(array(
-        'directory' => 'user',
-        'controller' => 'profile',
-        'action'     => 'private',
-        ));
-
 
 
 //Reset sifre :
