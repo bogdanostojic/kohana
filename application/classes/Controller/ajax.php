@@ -30,7 +30,7 @@ class Controller_Ajax extends Controller
         {
             array_push($us, $v->username);
         }   
-        sleep(1);
+        sleep(2);
         $this->response->body(json_encode($us));
 
 

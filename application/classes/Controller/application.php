@@ -10,7 +10,6 @@ abstract class Controller_Application extends Controller_Template
         
         $this->template->content = '';
         $this->template->styles = array(
-        'reset',
         'common');
         $this->template->scripts = array();
         

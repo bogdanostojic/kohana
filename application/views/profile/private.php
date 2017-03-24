@@ -5,21 +5,32 @@
 <h3>Our Recent Messages:</h3> <?php if ($messages) : ?>
 	<script>
 	 
-			jQuery.ajax({url: "<?php echo URL::site('ajax'); ?>", 
+			$(function (){ 
+				jQuery('#ajax-box').animate({height: '100px', width: '500px'}, 1000);
+				jQuery.ajax({url: "<?php echo URL::site('ajax'); ?>", 
 			       success: function(result) {
 						var data = JSON.parse(result);
 				console.log(data);	
 				
 				jQuery('#ajax-box').text('');
 				
+				var b = 0;
 				for(var i in data){
+					b++;
 					console.log(data[i]);
-					
-				jQuery('#ajax-box').append('<p id="ime">' + data[i] + '</p>');
-
+				jQuery('#ajax-box').append('<ul>');
+				jQuery('#ajax-box').append('<li id="ime">' + data[i] + '</li>');
+				jQuery('#ajax-box').append('</ul>');
 
 				}
+				var visina = (b * 35) + 'px';
+				console.log(visina);
+				jQuery('#ajax-box').animate({height: visina, width: '500px'}, 3000);
+				$('#ajax-box').css('backgroundColor','aa');
+				$('#ajax-box').css('color','#aaa');
+				$('#ajax-box').css('fontSize','14px');
 			}});
+			});
 	
 			</script>
 			<h1>Kohana AJAX example</h1>
