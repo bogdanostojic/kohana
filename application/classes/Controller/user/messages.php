@@ -115,27 +115,39 @@ class Controller_User_Messages extends Controller_Application
 
 
 
-     public function action_add()       
-      {           
-         $user = Auth::instance()->get_user();  
-         $message = new Model_Message;   
-         $message->user = $user;
-         $this->template->content = View::factory('profile/message_form')
-         ->bind('errors', $errors);
-            if ($_POST)
-              {
-                $_POST['date_published'] = time();
-                $message->values($_POST);
-                if ($message->check())
-                  {
-                    $message->save();
-                    $this->redirect("messages/get_messages/$user->id");
-                  }                 
-                else
-                  {
-                    $errors = $message->validate()>errors('messages/add');
-                  }
-        }           
+       public function action_add()       
+        {           
+
+
+  
+ //     $this->template->content = View::factory('account/signup');
+
+
+           $user = Auth::instance()->get_user();  
+           $message = new Model_Message;   
+           $message->user = $user;
+           $this->template->content = View::factory('profile/message_form')
+           ->bind('errors', $errors);
+              if ($_POST)
+                {
+                                    $validation = Validation::factory($this->request->post())
+                          ->rule('content', 'not_empty')
+                          ->rule('content', 'min_length', array(':value', 2))
+                          ->label('content', 'Korisnicko ime');
+                  $message->create($validation);
+
+                  $_POST['date_published'] = time();
+                  $message->values($_POST);
+                  if ($message->check())
+                    {
+                      $message->save();
+                      $this->redirect("messages/get_messages/$user->id");
+                    }                 
+                  else
+                    {
+                      $errors = $message->validate()>errors('messages/add');
+                    }
+          }           
        }
        public function action_edit()       
         {
